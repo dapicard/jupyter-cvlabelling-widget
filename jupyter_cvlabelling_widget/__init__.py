@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .example import ExampleWidget
+from .workzone import WorkzoneWidget
 from ._version import __version__, version_info
 
-from .nbextension import _jupyter_nbextension_paths
+# from .nbextension import _jupyter_nbextension_paths

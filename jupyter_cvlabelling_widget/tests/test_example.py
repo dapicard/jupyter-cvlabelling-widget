@@ -18,9 +18,9 @@
 
 import pytest
 
-from ..example import ExampleWidget
+from ..workzone import WorkzoneWidget
 
 
 def test_example_creation_blank():
-    w = ExampleWidget()
-    assert w.value == 'Hello World'
+    w = WorkzoneWidget()
+    # assert w.value == 'Hello World'

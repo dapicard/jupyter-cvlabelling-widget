@@ -23,16 +23,16 @@ import {
 
 
 export
-class ExampleModel extends DOMWidgetModel {
+class WorkzoneModel extends DOMWidgetModel {
   defaults() {
     return {...super.defaults(),
-      _model_name: ExampleModel.model_name,
-      _model_module: ExampleModel.model_module,
-      _model_module_version: ExampleModel.model_module_version,
-      _view_name: ExampleModel.view_name,
-      _view_module: ExampleModel.view_module,
-      _view_module_version: ExampleModel.view_module_version,
-      value : 'Hello World'
+      _model_name: WorkzoneModel.model_name,
+      _model_module: WorkzoneModel.model_module,
+      _model_module_version: WorkzoneModel.model_module_version,
+      _view_name: WorkzoneModel.view_name,
+      _view_module: WorkzoneModel.view_module,
+      _view_module_version: WorkzoneModel.view_module_version,
+      image : ''
     };
   }
 
@@ -41,24 +41,39 @@ class ExampleModel extends DOMWidgetModel {
       // Add any extra serializers here
     }
 
-  static model_name = 'ExampleModel';
+  static model_name = 'WorkzoneModel';
   static model_module = MODULE_NAME;
   static model_module_version = MODULE_VERSION;
-  static view_name = 'ExampleView';   // Set to null if no view
+  static view_name = 'WorkzoneView';   // Set to null if no view
   static view_module = MODULE_NAME;   // Set to null if no view
   static view_module_version = MODULE_VERSION;
 }
 
 
 export
-class ExampleView extends DOMWidgetView {
+class WorkzoneView extends DOMWidgetView {
+  
+  initialize(parameters: any): void {
+    this._setElement(document.createElement("img"));
+  }
+
+  _handle_click(event: any){
+    event.preventDefault();
+    this.send({event: 'click'});
+  }
+  
   render() {
-    console.log("Rendering 3");
+    super.render();
+    this.model.on('change:image', this.value_changed, this);
+    
+    const view = this;
+    this.el.addEventListener("click", function(ev: MouseEvent) {
+      view._handle_click(ev);
+    });
     this.value_changed();
-    this.model.on('change:value', this.value_changed, this);
   }
 
   value_changed() {
-    this.el.textContent = this.model.get('value');
+    this.el.setAttribute("src", this.model.get('image'));
   }
 }
