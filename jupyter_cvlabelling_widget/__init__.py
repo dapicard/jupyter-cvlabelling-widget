@@ -17,6 +17,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from .workzone import WorkzoneWidget
+from .writer import CaptureStore, FileSystemCaptureStore
 from ._version import __version__, version_info
 
 # from .nbextension import _jupyter_nbextension_paths

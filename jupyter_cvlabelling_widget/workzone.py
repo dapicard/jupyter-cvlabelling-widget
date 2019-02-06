@@ -20,13 +20,14 @@
 Module that provides the widgets to label images sets (from globs to videos)
 """
 
-from ipywidgets import DOMWidget
-from traitlets import Unicode
-from ._frontend import module_name, module_version
-import cv2
 import base64
 from io import BytesIO
+import cv2
 from PIL import Image
+from ipywidgets import DOMWidget
+from traitlets import Unicode, Int
+from ._frontend import module_name, module_version
+from .writer import CaptureStore
 
 
 class WorkzoneWidget(DOMWidget):
@@ -39,14 +40,33 @@ class WorkzoneWidget(DOMWidget):
     _view_module = Unicode(module_name).tag(sync=True)
     _view_module_version = Unicode(module_version).tag(sync=True)
 
-    image = Unicode('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAA3klEQVRIidXXOw6EIBAGYO/uEbwCDYXxIpNMxRG0tKOUf4sN+1BRYIHJmpAQI/MZMsDQERHmeW7aiAid77R6iAjLsjxh/6IFCuAbro1/xj7AtfB9zFO4NH4WKwiXwkMxLuFf8auxt3AufjcmCk7FY76NhmMDxv5gEnwXOGVWkuEQkJoHWfAeykm+bNiDucvt/2CRqRZJLpHlJLKBiGyZIoeEyLEoUgiIlD4ixV5p1BgDZoa1FlprMDO2batf0E/TBKUUhmHAOI7o+x7rur7hWoW8c+7Qf11hfKdlIyI8AOHxteZgXf1sAAAAAElFTkSuQmCC').tag(sync=True)
+    image = Unicode('').tag(sync=True)
+    image_width = Int(1024).tag(sync=True)
+    image_height = Int(768).tag(sync=True)
     capture = None
+    current_frame = None
+
+    capture_store: CaptureStore = None
+    
 
     def __init__(self, **kwargs):
         super(WorkzoneWidget, self).__init__(**kwargs)
-        self.on_msg(self._handle_button_msg)
+        self.on_msg(self._handle_messages)
 
-    def _handle_button_msg(self, _, content, buffers):
+    def grab_image(self):
+        if(self.capture.isOpened()):
+            ret, self.current_frame = self.capture.read()
+            height, width = self.current_frame.shape[:2]
+            rgb = cv2.cvtColor(self.current_frame, cv2.COLOR_BGR2GRAY)
+            im = Image.fromarray(rgb)
+            buffered = BytesIO()
+            im.save(buffered, format="PNG")
+            img_str = base64.b64encode(buffered.getvalue())
+            self.image = "data:image/png;base64," + img_str.decode("utf-8")
+            self.image_width = width
+            self.image_height = height
+
+    def _handle_messages(self, _, content, buffers):
         """Handle a msg from the front-end.
 
         Parameters
@@ -54,12 +74,16 @@ class WorkzoneWidget(DOMWidget):
         content: dict
             Content of the msg.
         """
-        if content.get('event', '') == 'click':
-            if(self.capture.isOpened()):
-                ret, frame = self.capture.read()
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                im = Image.fromarray(gray)
-                buffered = BytesIO()
-                im.save(buffered, format="PNG")
-                img_str = base64.b64encode(buffered.getvalue())
-                self.image = "data:image/png;base64," + img_str.decode("utf-8")
+        if content['event'] == 'click':
+            self.grab_image()
+        elif content['event'] == 'capture':
+            # Extract the image given the shape
+            zone = None
+            if(content['shape'] == 'RECT'):
+                width = content['shape_size']['width']
+                height = width = content['shape_size']['height']
+                top = max(content['center']['y'] - int(height/2), 0)
+                left = max(content['center']['x'] - int(width/2), 0)
+                zone = self.current_frame[top:min(top+height, self.image_height), left:min(left+width, self.image_width)]
+            if(self.capture_store is not None and zone is not None):
+                self.capture_store.append(cv2.cvtColor(zone, cv2.COLOR_BGR2RGB))

@@ -21,6 +21,9 @@ import {
   MODULE_NAME, MODULE_VERSION
 } from './version';
 
+// import * as svg from 'svg.js';
+import SVG from 'svg.js';
+
 
 export
 class WorkzoneModel extends DOMWidgetModel {
@@ -32,7 +35,9 @@ class WorkzoneModel extends DOMWidgetModel {
       _view_name: WorkzoneModel.view_name,
       _view_module: WorkzoneModel.view_module,
       _view_module_version: WorkzoneModel.view_module_version,
-      image : ''
+      image : '',
+      image_width: 1024,
+      image_height: 768
     };
   }
 
@@ -52,28 +57,115 @@ class WorkzoneModel extends DOMWidgetModel {
 
 export
 class WorkzoneView extends DOMWidgetView {
-  
+  keyboard_input: HTMLElement;
+  draw: SVG.Doc;
+  image: SVG.Image;
+  capture_shape: SVG.Rect;
+  focused_element: HTMLElement;
+  ratio = 1.0;
+
   initialize(parameters: any): void {
-    this._setElement(document.createElement("img"));
+    console.log("initialize")
+    this._setElement(document.createElement("div"));
   }
 
   _handle_click(event: any){
     event.preventDefault();
     this.send({event: 'click'});
   }
+
+  _handle_keypress(event: KeyboardEvent) {
+    event.preventDefault();
+    switch(event.code) {
+    case 'KeyC':
+      const msg = {
+        event: 'capture',
+        shape: 'RECT',
+        shape_size: {width: 25, height: 25},
+        center: {x: Math.round(this.capture_shape.cx()), y: Math.round(this.capture_shape.cy())}
+      }
+      this.send(msg);
+      break;
+    }
+  }
+
+  _get_focus(event: MouseEvent) {
+    event.preventDefault();
+    // Keep track of the focused element
+    this.focused_element = <HTMLElement>document.activeElement;
+    // Do it twice as sometimes a single call is not sufficient
+    this.keyboard_input.focus();
+    this.keyboard_input.focus();
+  }
+
+  _leave_focus(event: MouseEvent) {
+    // Back to the focused element
+    this.focused_element.focus();
+  }
+
+  draw_capture_rectangle(event) {
+    event.preventDefault();
+    let point = this.draw.point();
+    point.x = event.clientX;
+    point.y = event.clientY;
+    console.log("before", point);
+    const p2 = point.transform(this.image.screenCTM().inverse());
+    console.log("after", p2);
+    this.capture_shape.cx(p2.x*this.ratio);
+    this.capture_shape.cy(p2.y*this.ratio);
+  }
   
   render() {
     super.render();
-    this.model.on('change:image', this.value_changed, this);
+    
+    // An input element that will be used to get keyboard events
+    this.keyboard_input = document.createElement('input');
+    this.keyboard_input.setAttribute('type', 'text');
+    this.el.appendChild(this.keyboard_input);
+    this.keyboard_input.addEventListener('keypress', function(ev: KeyboardEvent) {
+      view._handle_keypress(ev);
+    });
+
+    // The drawing zone
+    const drawing = document.createElement("div");
+    this.el.appendChild(drawing);
+    this.draw = SVG(drawing);
+
+    // The image to display
+    this.image = this.draw.image();
+    this.image.on('mouseover', this._get_focus, this);
+    this.image.on('mouseout', this._leave_focus, this);
+    this.image.on('mousemove', this.draw_capture_rectangle, this);
+
+    // The capture shape, that will follow the mouse on the image
+    this.capture_shape = this.draw.rect(25,25);
+    this.capture_shape.attr('stroke', 'green');
+    this.capture_shape.attr('fill', 'none');
+
+    this.model.on('change:image', this.update_image, this);
     
     const view = this;
     this.el.addEventListener("click", function(ev: MouseEvent) {
       view._handle_click(ev);
     });
-    this.value_changed();
+    (<HTMLElement>this.el).addEventListener("DOMNodeInserted", function(event) {
+      view.update_image();
+    });
+    
   }
 
-  value_changed() {
-    this.el.setAttribute("src", this.model.get('image'));
+  update_image() {
+    this.image.load(this.model.get('image'));
+    const displayWidth: number = (<HTMLElement>this.el).offsetWidth;
+    const imageWidth: number = this.model.get('image_width');
+    this.ratio = 1.0;
+    if(displayWidth < imageWidth) {
+      this.ratio = Math.round(displayWidth / imageWidth*100)/100;
+    }
+    // ratio = 0.5;
+    this.image.scale(this.ratio);
+    this.capture_shape.size(25*this.ratio, 25*this.ratio);
+    this.draw.size(this.model.get('image_width')*this.ratio, this.model.get('image_height')*this.ratio);
+    //this.image.size(this.model.get('image_width')*ratio, this.model.get('image_height')*ratio);
   }
 }

@@ -12,8 +12,9 @@
     "rootDir": "src",
     "skipLibCheck": true,
     "sourceMap": true,
-    "strict": true,
+    "strict": false,
     "target": "es2015",
+    "allowSyntheticDefaultImports": true,
     "types": ["node"]
   },
   "include": ["src/*"]
