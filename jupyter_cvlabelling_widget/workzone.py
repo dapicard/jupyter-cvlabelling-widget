@@ -25,7 +25,8 @@ from io import BytesIO
 import cv2
 from PIL import Image
 from ipywidgets import DOMWidget
-from traitlets import Unicode, Int
+from traitlets import Unicode, Int, Instance
+from .model import Configuration, Shape, DictSerializable
 from ._frontend import module_name, module_version
 from .writer import CaptureStore
 
@@ -43,6 +44,8 @@ class WorkzoneWidget(DOMWidget):
     image = Unicode('').tag(sync=True)
     image_width = Int(1024).tag(sync=True)
     image_height = Int(768).tag(sync=True)
+    configuration = Instance(Configuration).tag(sync=True, to_json=DictSerializable.to_json)
+
     capture = None
     current_frame = None
 
@@ -50,6 +53,7 @@ class WorkzoneWidget(DOMWidget):
     
 
     def __init__(self, **kwargs):
+        self.configuration = Configuration()
         super(WorkzoneWidget, self).__init__(**kwargs)
         self.on_msg(self._handle_messages)
 
@@ -86,4 +90,4 @@ class WorkzoneWidget(DOMWidget):
                 left = max(content['center']['x'] - int(width/2), 0)
                 zone = self.current_frame[top:min(top+height, self.image_height), left:min(left+width, self.image_width)]
             if(self.capture_store is not None and zone is not None):
-                self.capture_store.append(cv2.cvtColor(zone, cv2.COLOR_BGR2RGB))
+                self.capture_store.append(cv2.cvtColor(zone, cv2.COLOR_BGR2RGB), content['label'])

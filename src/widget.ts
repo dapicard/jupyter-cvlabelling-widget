@@ -13,17 +13,13 @@
 //     You should have received a copy of the GNU Affero General Public License
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import {
-  DOMWidgetModel, DOMWidgetView, ISerializers
-} from '@jupyter-widgets/base';
-
-import {
-  MODULE_NAME, MODULE_VERSION
-} from './version';
-
-// import * as svg from 'svg.js';
+import { DOMWidgetModel, DOMWidgetView, ISerializers } from '@jupyter-widgets/base';
+import { MODULE_NAME, MODULE_VERSION } from './version';
 import SVG from 'svg.js';
 
+import { Configuration } from './model/configuration';
+import { LabellingFunction } from './function/labellingfunction';
+import { CaptureAndClassifyFunction } from './function/captureandclassify';
 
 export
 class WorkzoneModel extends DOMWidgetModel {
@@ -37,7 +33,8 @@ class WorkzoneModel extends DOMWidgetModel {
       _view_module_version: WorkzoneModel.view_module_version,
       image : '',
       image_width: 1024,
-      image_height: 768
+      image_height: 768,
+      capture_shape: {}
     };
   }
 
@@ -58,10 +55,11 @@ class WorkzoneModel extends DOMWidgetModel {
 export
 class WorkzoneView extends DOMWidgetView {
   keyboard_input: HTMLElement;
+  configuration: Configuration;
   draw: SVG.Doc;
   image: SVG.Image;
-  capture_shape: SVG.Rect;
   focused_element: HTMLElement;
+  labellingFunction: LabellingFunction;
   ratio = 1.0;
 
   initialize(parameters: any): void {
@@ -72,21 +70,6 @@ class WorkzoneView extends DOMWidgetView {
   _handle_click(event: any){
     event.preventDefault();
     this.send({event: 'click'});
-  }
-
-  _handle_keypress(event: KeyboardEvent) {
-    event.preventDefault();
-    switch(event.code) {
-    case 'KeyC':
-      const msg = {
-        event: 'capture',
-        shape: 'RECT',
-        shape_size: {width: 25, height: 25},
-        center: {x: Math.round(this.capture_shape.cx()), y: Math.round(this.capture_shape.cy())}
-      }
-      this.send(msg);
-      break;
-    }
   }
 
   _get_focus(event: MouseEvent) {
@@ -102,29 +85,19 @@ class WorkzoneView extends DOMWidgetView {
     // Back to the focused element
     this.focused_element.focus();
   }
-
-  draw_capture_rectangle(event) {
-    event.preventDefault();
-    let point = this.draw.point();
-    point.x = event.clientX;
-    point.y = event.clientY;
-    console.log("before", point);
-    const p2 = point.transform(this.image.screenCTM().inverse());
-    console.log("after", p2);
-    this.capture_shape.cx(p2.x*this.ratio);
-    this.capture_shape.cy(p2.y*this.ratio);
-  }
   
   render() {
     super.render();
+    this.update_configuration();
     
     // An input element that will be used to get keyboard events
     this.keyboard_input = document.createElement('input');
     this.keyboard_input.setAttribute('type', 'text');
+    this.keyboard_input.style.position = 'absolute';
+    this.keyboard_input.style.zIndex = '-1';
+    this.keyboard_input.style.width = '1px';
+    this.keyboard_input.style.height = '1px';
     this.el.appendChild(this.keyboard_input);
-    this.keyboard_input.addEventListener('keypress', function(ev: KeyboardEvent) {
-      view._handle_keypress(ev);
-    });
 
     // The drawing zone
     const drawing = document.createElement("div");
@@ -135,23 +108,25 @@ class WorkzoneView extends DOMWidgetView {
     this.image = this.draw.image();
     this.image.on('mouseover', this._get_focus, this);
     this.image.on('mouseout', this._leave_focus, this);
-    this.image.on('mousemove', this.draw_capture_rectangle, this);
 
-    // The capture shape, that will follow the mouse on the image
-    this.capture_shape = this.draw.rect(25,25);
-    this.capture_shape.attr('stroke', 'green');
-    this.capture_shape.attr('fill', 'none');
-
+    this.model.on('change:configuration', this.update_configuration, this);
     this.model.on('change:image', this.update_image, this);
     
+    this.labellingFunction.initialize(this.configuration.function, this, this.draw);
+
     const view = this;
+    this.image.on('mousemove', function(event: MouseEvent) {
+      this.labellingFunction.handle_mousemove(event, view.image);
+    }, this);
+    this.keyboard_input.addEventListener('keypress', function(ev: KeyboardEvent) {
+      view.labellingFunction.handle_keypress(ev);
+    });
     this.el.addEventListener("click", function(ev: MouseEvent) {
       view._handle_click(ev);
     });
     (<HTMLElement>this.el).addEventListener("DOMNodeInserted", function(event) {
       view.update_image();
     });
-    
   }
 
   update_image() {
@@ -162,10 +137,19 @@ class WorkzoneView extends DOMWidgetView {
     if(displayWidth < imageWidth) {
       this.ratio = Math.round(displayWidth / imageWidth*100)/100;
     }
-    // ratio = 0.5;
     this.image.scale(this.ratio);
-    this.capture_shape.size(25*this.ratio, 25*this.ratio);
     this.draw.size(this.model.get('image_width')*this.ratio, this.model.get('image_height')*this.ratio);
-    //this.image.size(this.model.get('image_width')*ratio, this.model.get('image_height')*ratio);
+    this.labellingFunction.update_image(this.image);
+  }
+
+  update_configuration() {
+    this.configuration = JSON.parse(this.model.get('configuration'));
+    console.log(this.configuration);
+    const functionName: string = this.configuration.function.class;
+    switch(functionName) {
+      case 'CaptureAndClassify':
+        this.labellingFunction = new CaptureAndClassifyFunction();
+        break;
+    }
   }
 }
