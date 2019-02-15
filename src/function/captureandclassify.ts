@@ -14,7 +14,7 @@
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-import { WidgetView } from '@jupyter-widgets/base';
+import { WidgetView, WidgetModel } from '@jupyter-widgets/base';
 import SVG from 'svg.js';
 
 import { LabellingFunction } from './labellingfunction';
@@ -25,6 +25,7 @@ import { CaptureAndClassify } from '../model/functions';
 export class CaptureAndClassifyFunction implements LabellingFunction {
   configuration: CaptureAndClassify;
   view: WidgetView;
+  model: WidgetModel;
   draw: SVG.Doc;
   capture_shape: SVG.Rect;
 
@@ -32,6 +33,7 @@ export class CaptureAndClassifyFunction implements LabellingFunction {
     this.configuration = configuration;
     this.draw = draw;
     this.view = view;
+    this.model = view.model;
     if(this.configuration.capture_shape.shape_type == ShapeType.RECT) {
       this.capture_shape = this.draw.rect(this.configuration.capture_shape.width, this.configuration.capture_shape.height);
     }

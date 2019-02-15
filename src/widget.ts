@@ -21,8 +21,7 @@ import { Configuration } from './model/configuration';
 import { LabellingFunction } from './function/labellingfunction';
 import { CaptureAndClassifyFunction } from './function/captureandclassify';
 
-export
-class WorkzoneModel extends DOMWidgetModel {
+export class WorkzoneModel extends DOMWidgetModel {
   defaults() {
     return {...super.defaults(),
       _model_name: WorkzoneModel.model_name,
@@ -52,8 +51,7 @@ class WorkzoneModel extends DOMWidgetModel {
 }
 
 
-export
-class WorkzoneView extends DOMWidgetView {
+export class WorkzoneView extends DOMWidgetView {
   keyboard_input: HTMLElement;
   configuration: Configuration;
   draw: SVG.Doc;

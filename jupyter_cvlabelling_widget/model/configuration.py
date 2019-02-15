@@ -20,14 +20,14 @@
 Configuration bean
 """
 from .serializable import DictSerializable
-from .functions import CaptureAndClassify
+from ..functions import WorkzoneFunction
 
 class Configuration(DictSerializable):
     """
     Contains all the configuration variables
     """
-    function = None
+    function: WorkzoneFunction = None
 
-    def __init__(self, function=CaptureAndClassify()):
+    def __init__(self, function=None):
         self.function = function
 

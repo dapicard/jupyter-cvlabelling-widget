@@ -19,6 +19,5 @@
 from .serializable import DictSerializable
 from .shape import Shape, ShapeType
 from .configuration import Configuration
-from .functions import CaptureAndClassify
 
 # from .nbextension import _jupyter_nbextension_paths

@@ -17,20 +17,20 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-Module that contains common interface and basic implementations of capture stores
+Module that contains common interface and basic implementations of stores
 """
 import abc
 import os
 import pathlib
 from PIL import Image
 
-class CaptureStore(object, metaclass=abc.ABCMeta):
+class ClassifyStore(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def append(self, image_capture, label):
         raise NotImplementedError('users must define __str__ to use this base class')
 
 
-class FileSystemCaptureStore(CaptureStore):
+class FileSystemClassifyStore(ClassifyStore):
     """
     Store captures in a FS folder
     """
@@ -38,6 +38,7 @@ class FileSystemCaptureStore(CaptureStore):
     filename_pattern = None
     last_inserted = {}
     image_format = None
+    message = ''
 
     def __init__(self, folder_path, filename_pattern, labels, image_format="PNG"):
         self.folder_path = folder_path
@@ -57,6 +58,7 @@ class FileSystemCaptureStore(CaptureStore):
         image_capture : array representing the capture to store
         label : capture label (classification)
         """
+        self.message = 'store ' + label + ' to ' + self.folder_path
         image = Image.fromarray(image_capture)
         image.save(self.folder_path + '/' + label + '/' + self.filename_pattern % (self.last_inserted[label]+1), format=self.image_format)
         self.last_inserted[label] += 1

@@ -17,18 +17,6 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-Available functions
+Module that contains all the available actions
 """
-from .serializable import DictSerializable
-from .shape import Shape
-
-class CaptureAndClassify(DictSerializable):
-    """
-    Capture and classify function, defining a capture shape and a key to classname binding
-    """
-    capture_shape: Shape = None
-    keyclass_binding = None
-
-    def __init__(self, shape=Shape(), keyclass_binding={'KeyC': 'capture'}):
-        self.capture_shape = shape
-        self.keyclass_binding = keyclass_binding
+from .functions import WorkzoneFunction, CaptureAndClassify

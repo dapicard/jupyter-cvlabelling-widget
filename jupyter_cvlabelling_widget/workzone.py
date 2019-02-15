@@ -26,9 +26,9 @@ import cv2
 from PIL import Image
 from ipywidgets import DOMWidget
 from traitlets import Unicode, Int, Instance
-from .model import Configuration, Shape, DictSerializable
+from .model import Configuration, DictSerializable
 from ._frontend import module_name, module_version
-from .writer import CaptureStore
+from .writer import ClassifyStore
 
 
 class WorkzoneWidget(DOMWidget):
@@ -48,8 +48,9 @@ class WorkzoneWidget(DOMWidget):
 
     capture = None
     current_frame = None
+    message = ''
 
-    capture_store: CaptureStore = None
+    capture_store: ClassifyStore = None
     
 
     def __init__(self, **kwargs):
@@ -79,15 +80,8 @@ class WorkzoneWidget(DOMWidget):
             Content of the msg.
         """
         if content['event'] == 'click':
+            self.message = 'click'
             self.grab_image()
-        elif content['event'] == 'capture':
-            # Extract the image given the shape
-            zone = None
-            if(content['shape'] == 'RECT'):
-                width = content['shape_size']['width']
-                height = width = content['shape_size']['height']
-                top = max(content['center']['y'] - int(height/2), 0)
-                left = max(content['center']['x'] - int(width/2), 0)
-                zone = self.current_frame[top:min(top+height, self.image_height), left:min(left+width, self.image_width)]
-            if(self.capture_store is not None and zone is not None):
-                self.capture_store.append(cv2.cvtColor(zone, cv2.COLOR_BGR2RGB), content['label'])
+        else:
+            self.message = 'content ' + content['event']
+            self.configuration.function.apply(content, self.current_frame)
