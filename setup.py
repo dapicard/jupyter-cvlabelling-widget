@@ -88,6 +88,7 @@ setup_args = dict(
     install_requires = [
         'ipywidgets>=7.0.0',
         'opencv-python>=3.4.5.20',
+        'PIL>=1.1.6',
     ],
     extras_require = {
         'test': [
