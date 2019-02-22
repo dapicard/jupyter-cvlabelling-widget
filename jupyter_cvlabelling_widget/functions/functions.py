@@ -39,28 +39,30 @@ class CaptureAndClassify(WorkzoneFunction):
     """
     capture_shape: Shape = None
     keyclass_binding = None
-    message = ""
+    latest_pool_size = None
     _store: ClassifyStore = None
 
-    def __init__(self, store, shape=Shape(), keyclass_binding={'KeyC': 'capture'}):
+    def __init__(self, store, shape=Shape(), keyclass_binding={'KeyC': 'capture'}, latest_pool_size=10):
         self._store = store
         self.capture_shape = shape
         self.keyclass_binding = keyclass_binding
+        self.latest_pool_size = latest_pool_size
 
     def apply(self, content, frame):
         """
         Apply the action
         """
-        # Extract the image given the shape
-        zone = None
-        self.message = "apply " + content['shape']
-        h, w = frame.shape[:2]
-        self.message = "apply " + content['shape'] + " " + str(w) + "x" + str(h)
-        if(content['shape'] == 'RECT'):
-            width = content['shape_size']['width']
-            height = width = content['shape_size']['height']
-            top = max(content['center']['y'] - int(height/2), 0)
-            left = max(content['center']['x'] - int(width/2), 0)
-            zone = frame[top:min(top+height, h), left:min(left+width, w)]
-        #if(zone is not None):
-        self._store.append(cv2.cvtColor(zone, cv2.COLOR_BGR2RGB), content['label'])
+        if content['event'] == 'capture':
+            # Extract the image given the shape
+            zone = None
+            h, w = frame.shape[:2]
+            if(content['shape'] == 'RECT'):
+                width = content['shape_size']['width']
+                height = width = content['shape_size']['height']
+                top = max(content['center']['y'] - int(height/2), 0)
+                left = max(content['center']['x'] - int(width/2), 0)
+                zone = frame[top:min(top+height, h), left:min(left+width, w)]
+            self._store.append(cv2.cvtColor(zone, cv2.COLOR_BGR2RGB), content['label'])
+        elif content['event'] == 'delete_capture':
+            # Delete the n-th latest capture
+            self._store.delete_latest(content['index'], content['label'])

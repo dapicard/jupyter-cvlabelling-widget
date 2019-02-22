@@ -22,13 +22,18 @@ Module that contains common interface and basic implementations of stores
 import abc
 import os
 import pathlib
+import glob
+from parse import parse
 from PIL import Image
 
 class ClassifyStore(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def append(self, image_capture, label):
-        raise NotImplementedError('users must define __str__ to use this base class')
+        raise NotImplementedError('users must define append to use this base class')
 
+    @abc.abstractmethod
+    def delete_latest(self, capture_index, label):
+        raise NotImplementedError('users must define delete_latest to use this base class')
 
 class FileSystemClassifyStore(ClassifyStore):
     """
@@ -38,7 +43,6 @@ class FileSystemClassifyStore(ClassifyStore):
     filename_pattern = None
     last_inserted = {}
     image_format = None
-    message = ''
 
     def __init__(self, folder_path, filename_pattern, labels, image_format="PNG"):
         self.folder_path = folder_path
@@ -47,8 +51,10 @@ class FileSystemClassifyStore(ClassifyStore):
         for label in labels:
             i = 0
             pathlib.Path(folder_path + '/' + label).mkdir(parents=True, exist_ok=True)
-            while os.path.exists(folder_path + '/' + label + '/' + filename_pattern % (i + 1)):
-                i += 1
+            for f in list(glob.glob(folder_path + '/' + label + '/' + filename_pattern.format('[0-9]*'))):
+                f_index = int(parse(folder_path + '/' + label + '/' + filename_pattern, f)[0])
+                if f_index > i:
+                    i = f_index
             self.last_inserted[label] = i
 
     def append(self, image_capture, label):
@@ -58,7 +64,19 @@ class FileSystemClassifyStore(ClassifyStore):
         image_capture : array representing the capture to store
         label : capture label (classification)
         """
-        self.message = 'store ' + label + ' to ' + self.folder_path
         image = Image.fromarray(image_capture)
-        image.save(self.folder_path + '/' + label + '/' + self.filename_pattern % (self.last_inserted[label]+1), format=self.image_format)
+        image.save(self.folder_path + '/' + label + '/' + self.filename_pattern.format(self.last_inserted[label]+1), format=self.image_format)
         self.last_inserted[label] += 1
+
+    def delete_latest(self, capture_index, label):
+        """
+        Delete the n-th latest capture, where capture_index is the reverse index to delete :
+          0 - delete the latest capture
+          -1 - delete the previous one
+          and so on...
+        capture_index : n-th latest index to delete
+        label : capture label (classification)
+        """
+        to_delete = self.last_inserted[label] + capture_index
+        if to_delete >= 0:
+            os.remove(self.folder_path + '/' + label + '/' + self.filename_pattern.format(to_delete))

@@ -19,4 +19,5 @@ import { Shape } from "./shape";
 export interface CaptureAndClassify extends Serializable {
     capture_shape: Shape;
     keyclass_binding: {[key:string]: string};
+    latest_pool_size: number;
 }

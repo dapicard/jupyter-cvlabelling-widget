@@ -68,6 +68,9 @@ export class WorkzoneView extends DOMWidgetView {
   _handle_click(event: any){
     event.preventDefault();
     this.send({event: 'click'});
+    // Do it twice as sometimes a single call is not sufficient
+    this.keyboard_input.focus({preventScroll: true});
+    this.keyboard_input.focus({preventScroll: true});
   }
 
   _get_focus(event: MouseEvent) {
@@ -75,13 +78,13 @@ export class WorkzoneView extends DOMWidgetView {
     // Keep track of the focused element
     this.focused_element = <HTMLElement>document.activeElement;
     // Do it twice as sometimes a single call is not sufficient
-    this.keyboard_input.focus();
-    this.keyboard_input.focus();
+    this.keyboard_input.focus({preventScroll: true});
+    this.keyboard_input.focus({preventScroll: true});
   }
 
   _leave_focus(event: MouseEvent) {
     // Back to the focused element
-    this.focused_element.focus();
+    this.focused_element.focus({preventScroll: true});
   }
   
   render() {
@@ -116,10 +119,13 @@ export class WorkzoneView extends DOMWidgetView {
     this.image.on('mousemove', function(event: MouseEvent) {
       this.labellingFunction.handle_mousemove(event, view.image);
     }, this);
+    this.image.on('DOMMouseScroll mousewheel', function(event: MouseWheelEvent) {
+      this.labellingFunction.handle_mousewheel(event, view.image);
+    }, this)
     this.keyboard_input.addEventListener('keypress', function(ev: KeyboardEvent) {
       view.labellingFunction.handle_keypress(ev);
     });
-    this.el.addEventListener("click", function(ev: MouseEvent) {
+    drawing.addEventListener("click", function(ev: MouseEvent) {
       view._handle_click(ev);
     });
     (<HTMLElement>this.el).addEventListener("DOMNodeInserted", function(event) {
@@ -142,7 +148,6 @@ export class WorkzoneView extends DOMWidgetView {
 
   update_configuration() {
     this.configuration = JSON.parse(this.model.get('configuration'));
-    console.log(this.configuration);
     const functionName: string = this.configuration.function.class;
     switch(functionName) {
       case 'CaptureAndClassify':

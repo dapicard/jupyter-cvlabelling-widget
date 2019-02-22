@@ -87,6 +87,7 @@ setup_args = dict(
     include_package_data = True,
     install_requires = [
         'ipywidgets>=7.0.0',
+        'parse>=1.11.1',
         'opencv-python>=3.4.5.20',
         'Pillow>=5.4',
     ],

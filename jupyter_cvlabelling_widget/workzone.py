@@ -48,10 +48,6 @@ class WorkzoneWidget(DOMWidget):
 
     capture = None
     current_frame = None
-    message = ''
-
-    capture_store: ClassifyStore = None
-    
 
     def __init__(self, **kwargs):
         self.configuration = Configuration()
@@ -62,7 +58,7 @@ class WorkzoneWidget(DOMWidget):
         if(self.capture.isOpened()):
             ret, self.current_frame = self.capture.read()
             height, width = self.current_frame.shape[:2]
-            rgb = cv2.cvtColor(self.current_frame, cv2.COLOR_BGR2GRAY)
+            rgb = cv2.cvtColor(self.current_frame, cv2.COLOR_BGR2RGB)
             im = Image.fromarray(rgb)
             buffered = BytesIO()
             im.save(buffered, format="PNG")
@@ -80,8 +76,6 @@ class WorkzoneWidget(DOMWidget):
             Content of the msg.
         """
         if content['event'] == 'click':
-            self.message = 'click'
             self.grab_image()
         else:
-            self.message = 'content ' + content['event']
             self.configuration.function.apply(content, self.current_frame)

@@ -23,6 +23,8 @@ export interface LabellingFunction {
 
   handle_mousemove(event: MouseEvent, image: SVG.Image);
 
+  handle_mousewheel(event: MouseWheelEvent, image: SVG.Image);
+
   handle_keypress(event: KeyboardEvent);
 
   update_image(image: SVG.Image);
