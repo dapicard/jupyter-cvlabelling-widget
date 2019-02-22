@@ -22,7 +22,7 @@ from setuptools import setup
 name = 'jupyter_cvlabelling_widget'
 
 # Ensure a valid python version
-ensure_python('>=3.4')
+ensure_python('>=3.6')
 
 # Get our version
 version = get_version(pjoin(name, '_version.py'))

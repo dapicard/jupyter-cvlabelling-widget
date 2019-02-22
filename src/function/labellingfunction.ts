@@ -19,13 +19,13 @@ import SVG from 'svg.js';
 
 export interface LabellingFunction {
 
-  initialize(configuration: any, view: WidgetView, draw: SVG.Doc);
+  initialize(configuration: any, view: WidgetView, draw: SVG.Doc): void;
 
-  handle_mousemove(event: MouseEvent, image: SVG.Image);
+  handle_mousemove(event: MouseEvent, image: SVG.Image): void;
 
-  handle_mousewheel(event: MouseWheelEvent, image: SVG.Image);
+  handle_mousewheel(event: MouseWheelEvent, image: SVG.Image): void;
 
-  handle_keypress(event: KeyboardEvent);
+  handle_keypress(event: KeyboardEvent): void;
 
-  update_image(image: SVG.Image);
+  update_image(image: SVG.Image): void;
 }

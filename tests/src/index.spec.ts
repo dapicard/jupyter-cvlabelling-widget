@@ -12,26 +12,13 @@ import {
 } from './utils.spec';
 
 import {
-  ExampleModel, ExampleView
+  WorkzoneModel, WorkzoneView
 } from '../../src/'
 
 
-describe('Example', () => {
+describe('Workzone', () => {
 
-  describe('ExampleModel', () => {
-
-    it('should be createable', () => {
-      let model = createTestModel(ExampleModel);
-      expect(model).to.be.an(ExampleModel);
-      expect(model.get('value')).to.be('Hello World');
-    });
-
-    it('should be createable with a value', () => {
-      let state = { value: 'Foo Bar!' }
-      let model = createTestModel(ExampleModel, state);
-      expect(model).to.be.an(ExampleModel);
-      expect(model.get('value')).to.be('Foo Bar!');
-    });
+  describe('WorkzoneModel', () => {
 
   });
 
