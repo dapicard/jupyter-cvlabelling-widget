@@ -12,9 +12,9 @@ matrix:
   include:
     - python: 3.5
       env: GROUP=js
-  include:
-    - python: 3.6
-      env: GROUP=docs
+  #include:
+  #  - python: 3.6
+  #    env: GROUP=docs
 cache:
   pip: true
   directories:
