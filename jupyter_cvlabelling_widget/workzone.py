@@ -22,13 +22,12 @@ Module that provides the widgets to label images sets (from globs to videos)
 
 import base64
 from io import BytesIO
-import cv2
 from PIL import Image
 from ipywidgets import DOMWidget
 from traitlets import Unicode, Int, Instance
-from .model import Configuration, DictSerializable
 from ._frontend import module_name, module_version
-from .writer import ClassifyStore
+from .model import Configuration, DictSerializable
+from .source import WorkzoneSource
 
 
 class WorkzoneWidget(DOMWidget):
@@ -46,8 +45,8 @@ class WorkzoneWidget(DOMWidget):
     image_height = Int(768).tag(sync=True)
     configuration = Instance(Configuration).tag(sync=True, to_json=DictSerializable.to_json)
 
-    capture = None
-    current_frame = None
+    source: WorkzoneSource = None
+    current_frame: Image = None
 
     def __init__(self, **kwargs):
         self.configuration = Configuration()
@@ -55,17 +54,16 @@ class WorkzoneWidget(DOMWidget):
         self.on_msg(self._handle_messages)
 
     def grab_image(self):
-        if(self.capture.isOpened()):
-            ret, self.current_frame = self.capture.read()
-            height, width = self.current_frame.shape[:2]
-            rgb = cv2.cvtColor(self.current_frame, cv2.COLOR_BGR2RGB)
-            im = Image.fromarray(rgb)
-            buffered = BytesIO()
-            im.save(buffered, format="PNG")
-            img_str = base64.b64encode(buffered.getvalue())
-            self.image = "data:image/png;base64," + img_str.decode("utf-8")
-            self.image_width = width
-            self.image_height = height
+        self.current_frame = self.source.next()
+        height, width = self.current_frame.shape[:2]
+        im = Image.fromarray(self.current_frame)
+        buffered = BytesIO()
+        im.save(buffered, format="PNG")
+        img_str = base64.b64encode(buffered.getvalue())
+        self.image = "data:image/png;base64," + img_str.decode("utf-8")
+        
+        self.image_width = width
+        self.image_height = height
 
     def _handle_messages(self, _, content, buffers):
         """Handle a msg from the front-end.
