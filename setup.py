@@ -80,7 +80,7 @@ setup_args = dict(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
         'Framework :: Jupyter',
-        'Framework :: OpenCV',
+        'Development Status :: 3 - Alpha',
     ],
     include_package_data = True,
     install_requires = [
