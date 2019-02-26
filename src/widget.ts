@@ -19,6 +19,7 @@ import SVG from 'svg.js';
 
 import { Configuration } from './model/configuration';
 import { LabellingFunction } from './function/labellingfunction';
+import { ClassifyFunction } from './function/classify';
 import { CaptureAndClassifyFunction } from './function/captureandclassify';
 
 export class WorkzoneModel extends DOMWidgetModel {
@@ -67,7 +68,7 @@ export class WorkzoneView extends DOMWidgetView {
 
   _handle_click(event: any){
     event.preventDefault();
-    this.send({event: 'click'});
+    this.send({event: 'next'});
     // Do it twice as sometimes a single call is not sufficient
     this.keyboard_input.focus({preventScroll: true});
     this.keyboard_input.focus({preventScroll: true});
@@ -140,6 +141,8 @@ export class WorkzoneView extends DOMWidgetView {
     this.ratio = 1.0;
     if(displayWidth < imageWidth) {
       this.ratio = Math.round(displayWidth / imageWidth*100)/100;
+    } else {
+      this.image.size(this.model.get('image_width'), this.model.get('image_height'));
     }
     this.image.scale(this.ratio);
     this.draw.size(this.model.get('image_width')*this.ratio, this.model.get('image_height')*this.ratio);
@@ -149,7 +152,11 @@ export class WorkzoneView extends DOMWidgetView {
   update_configuration() {
     this.configuration = JSON.parse(this.model.get('configuration'));
     const functionName: string = this.configuration.function.class;
+    console.log(functionName);
     switch(functionName) {
+      case 'Classify':
+        this.labellingFunction = new ClassifyFunction();
+        break;
       case 'CaptureAndClassify':
         this.labellingFunction = new CaptureAndClassifyFunction();
         break;

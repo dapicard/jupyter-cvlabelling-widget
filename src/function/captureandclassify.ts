@@ -14,44 +14,29 @@
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-import { WidgetView, WidgetModel } from '@jupyter-widgets/base';
+import { WidgetView } from '@jupyter-widgets/base';
 import SVG from 'svg.js';
 
-import { LabellingFunction } from './labellingfunction';
 import { ShapeType } from '../model/shape';
 import { CaptureAndClassify } from '../model/functions';
+import { ClassifyFunction } from './classify';
 
 
-export class CaptureAndClassifyFunction implements LabellingFunction {
-  configuration: CaptureAndClassify;
-  view: WidgetView;
-  model: WidgetModel;
-  draw: SVG.Doc;
-  current_image: SVG.Image;
+export class CaptureAndClassifyFunction extends ClassifyFunction {
+  local_configuration: CaptureAndClassify;
   capture_shape: SVG.Rect;
-  latest_captures: HTMLDivElement;
-  private current_capture_index: {[key:string]: number};
+  
 
   initialize(configuration: any, view: WidgetView, draw: SVG.Doc) {
-    this.configuration = configuration;
-    this.draw = draw;
-    this.view = view;
-    this.model = view.model;
-    if(this.configuration.capture_shape.shape_type == ShapeType.RECT) {
-      this.capture_shape = this.draw.rect(this.configuration.capture_shape.width, this.configuration.capture_shape.height);
+    super.initialize(configuration, view, draw);
+    this.local_configuration = configuration;
+
+    if(this.local_configuration.capture_shape.shape_type == ShapeType.RECT) {
+      this.capture_shape = this.draw.rect(this.local_configuration.capture_shape.width, this.local_configuration.capture_shape.height);
     }
+
     this.capture_shape.attr('stroke', 'red');
     this.capture_shape.attr('fill', 'none');
-
-    // Create latest captures toolbar
-    this.latest_captures = document.createElement('div');
-    this.latest_captures.setAttribute('id', 'latest_captures');
-    this.view.el.appendChild(this.latest_captures);
-
-    this.current_capture_index = {};
-    for(let key in this.configuration.keyclass_binding) {
-      this.current_capture_index[this.configuration.keyclass_binding[key]] = 0;
-    }
   }
 
   handle_keypress(event: KeyboardEvent) {
@@ -60,7 +45,7 @@ export class CaptureAndClassifyFunction implements LabellingFunction {
       const msg = {
         event: 'capture',
         label: this.configuration.keyclass_binding[event.code],
-        shape: this.configuration.capture_shape.shape_type,
+        shape: this.local_configuration.capture_shape.shape_type,
         shape_size: {width: this.capture_shape.width(), height: this.capture_shape.height()},
         center: {x: Math.round(this.capture_shape.cx()), y: Math.round(this.capture_shape.cy())}
       }
@@ -105,61 +90,7 @@ export class CaptureAndClassifyFunction implements LabellingFunction {
   }
 
   update_image(image: SVG.Image) {
-    this.current_image = image;
+    super.update_image(image);
     this.capture_shape.transform(image.transform());
-  }
-
-  private addCapture(dataUrl: string, label: string) {
-    const widget = this;
-    const img = document.createElement('img');
-    img.src = dataUrl;
-    img.title = label;
-    
-    const div = document.createElement('div');
-    div.style.display = 'inline';
-    div.style.position = 'relative';
-    div.style.marginRight = '8px';
-    div.appendChild(img);
-
-    const close = document.createElement('button');
-    close.style.position = 'absolute';
-    close.style.backgroundColor = 'white';
-    close.style.bottom = '0px';
-    close.style.right = '-5px';
-    close.style.color = 'red';
-    close.style.border = 'none';
-    close.style.width = '12px';
-    close.style.height = '15px';
-    close.style.padding = '0px';
-    close.style.margin = '0px';
-    close.title = 'Remove this capture';
-    const capture_index = this.current_capture_index[label];
-    close.addEventListener('click', function(ev: Event) {
-      widget.handle_delete_capture(div, label, capture_index);
-      
-    });
-    const icon = document.createElement('span');
-    icon.className = 'fa fa-window-close';
-    close.appendChild(icon);
-    div.appendChild(close);
-
-    if(this.latest_captures.childElementCount >= this.configuration.latest_pool_size) {
-      this.latest_captures.removeChild(this.latest_captures.firstChild);
-    }
-    this.latest_captures.appendChild(div);
-  }
-
-  handle_delete_capture(div: HTMLDivElement, label: string, index: number) {
-    // Send a message to delete the n-th latest capture
-    // 0 is the latest capture
-    // -1 is the previous one
-    // and so on
-    const msg = {
-      event: 'delete_capture',
-      label: label,
-      index: (index - this.current_capture_index[label])
-    }
-    this.view.send(msg);
-    this.latest_captures.removeChild(div);
   }
 }

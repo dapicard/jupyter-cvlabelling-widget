@@ -20,8 +20,7 @@
 Available functions
 """
 import abc
-import cv2
-from ..writer import ClassifyStore
+from ..destination import ClassifyStore
 from ..model import DictSerializable
 from ..model import Shape
 
@@ -62,7 +61,31 @@ class CaptureAndClassify(WorkzoneFunction):
                 top = max(content['center']['y'] - int(height/2), 0)
                 left = max(content['center']['x'] - int(width/2), 0)
                 zone = frame[top:min(top+height, h), left:min(left+width, w)]
-            self._store.append(cv2.cvtColor(zone, cv2.COLOR_BGR2RGB), content['label'])
+            self._store.append(zone, content['label'])
+        elif content['event'] == 'delete_capture':
+            # Delete the n-th latest capture
+            self._store.delete_latest(content['index'], content['label'])
+
+class Classify(WorkzoneFunction):
+    """
+    Classify function, defining a key to classname binding
+    """
+    keyclass_binding = None
+    latest_pool_size = None
+    _store: ClassifyStore = None
+
+    def __init__(self, store, keyclass_binding={'KeyC': 'capture'}, latest_pool_size=10):
+        self._store = store
+        self.keyclass_binding = keyclass_binding
+        self.latest_pool_size = latest_pool_size
+
+    def apply(self, content, frame):
+        """
+        Apply the action
+        """
+        if content['event'] == 'capture':
+            # Put the image in the destination folder
+            self._store.append(frame, content['label'])
         elif content['event'] == 'delete_capture':
             # Delete the n-th latest capture
             self._store.delete_latest(content['index'], content['label'])

@@ -19,4 +19,4 @@
 """
 Module that contains all the available actions
 """
-from .functions import WorkzoneFunction, CaptureAndClassify
+from .functions import WorkzoneFunction, Classify, CaptureAndClassify

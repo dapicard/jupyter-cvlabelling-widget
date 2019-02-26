@@ -60,10 +60,9 @@ class WorkzoneWidget(DOMWidget):
         buffered = BytesIO()
         im.save(buffered, format="PNG")
         img_str = base64.b64encode(buffered.getvalue())
-        self.image = "data:image/png;base64," + img_str.decode("utf-8")
-        
         self.image_width = width
         self.image_height = height
+        self.image = "data:image/png;base64," + img_str.decode("utf-8")
 
     def _handle_messages(self, _, content, buffers):
         """Handle a msg from the front-end.
@@ -73,7 +72,7 @@ class WorkzoneWidget(DOMWidget):
         content: dict
             Content of the msg.
         """
-        if content['event'] == 'click':
+        if content['event'] == 'next':
             self.grab_image()
         else:
             self.configuration.function.apply(content, self.current_frame)

@@ -16,8 +16,12 @@
 import { Serializable } from "./serializable";
 import { Shape } from "./shape";
 
-export interface CaptureAndClassify extends Serializable {
-    capture_shape: Shape;
+
+export interface Classify extends Serializable {
     keyclass_binding: {[key:string]: string};
     latest_pool_size: number;
+}
+
+export interface CaptureAndClassify extends Classify {
+    capture_shape: Shape;
 }

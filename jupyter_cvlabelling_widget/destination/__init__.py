@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .workzone import WorkzoneWidget
-from ._version import __version__, version_info
-
-# from .nbextension import _jupyter_nbextension_paths
+"""
+Module that contains all the available actions
+"""
+from .writer import ClassifyStore, FileSystemClassifyStore
